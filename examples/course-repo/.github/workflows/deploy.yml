@@ -1,0 +1,20 @@
+name: Publish slides
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    uses: warddr/slidev-ap-engine/.github/workflows/build-slidev-course.yml@main
+    with:
+      engine-repository: warddr/slidev-ap-engine
+      engine-ref: main
+      # Gebruik '/' voor een custom domain op de root.
+      # base-path: '/'

@@ -1,0 +1,414 @@
+:root {
+  --ap-red: #ad0f0a;
+  --ap-dark: #404040;
+  --ap-light: #e7e6e6;
+  --ap-orange: #f59a00;
+  --ap-magenta: #ad1073;
+  --ap-cyan: #009ead;
+  --ap-green: #1d9659;
+  --ap-text: #404040;
+  --ap-muted: #767676;
+  --ap-page-bg: #ffffff;
+  --ap-footer-height: 58px;
+  --ap-content-left: 72px;
+  --ap-content-right: 72px;
+  --ap-content-top: 52px;
+  --ap-font-sans: Arial, Helvetica, sans-serif;
+  --ap-font-mono: "Cascadia Code", "Fira Code", Consolas, monospace;
+}
+
+.slidev-layout,
+.ap-slide {
+  font-family: var(--ap-font-sans);
+  color: var(--ap-text);
+  background: var(--ap-page-bg);
+}
+
+.ap-slide {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ap-content {
+  position: absolute;
+  inset: var(--ap-content-top) var(--ap-content-right) calc(var(--ap-footer-height) + 30px) var(--ap-content-left);
+  display: block;
+  z-index: 2;
+}
+
+.ap-slide h1 {
+  color: var(--ap-red);
+  font-size: 2.55rem;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 1.05rem;
+}
+
+.ap-slide h2 {
+  color: var(--ap-dark);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.16;
+  margin: 0.9rem 0 0.55rem;
+}
+
+.ap-slide h3 {
+  color: var(--ap-red);
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0.7rem 0 0.3rem;
+}
+
+.ap-slide p,
+.ap-slide li {
+  font-size: 1.08rem;
+  line-height: 1.38;
+}
+
+.ap-slide ul,
+.ap-slide ol {
+  padding-left: 1.45rem;
+}
+
+.ap-slide li::marker { color: var(--ap-red); }
+.ap-slide p { margin: 0.42rem 0 0.55rem; }
+.ap-slide li + li { margin-top: 0.24rem; }
+
+.ap-slide pre {
+  font-size: 0.78rem;
+  line-height: 1.32;
+  max-height: 54vh;
+  overflow: auto;
+}
+
+.ap-slide .slidev-code { font-size: 0.78rem; }
+.ap-slide .katex, .ap-slide .math { font-size: 1.05em; }
+
+.ap-slide a {
+  color: var(--ap-red);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(173, 15, 10, 0.35);
+}
+
+.ap-slide blockquote {
+  border-left: 6px solid var(--ap-red);
+  background: #f8f8f8;
+  padding: 0.45rem 0.8rem;
+  margin: 0.8rem 0;
+  color: var(--ap-dark);
+}
+
+.ap-slide code {
+  font-family: var(--ap-font-mono);
+  font-size: 0.82em;
+  color: var(--ap-red);
+}
+.ap-slide pre code { color: inherit; }
+
+.ap-slide table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.ap-slide th {
+  background: var(--ap-red);
+  color: white;
+  font-weight: 600;
+}
+.ap-slide th,
+.ap-slide td {
+  border: 1px solid #ddd;
+  padding: 0.42rem 0.55rem;
+}
+.ap-slide tr:nth-child(even) td { background: #f7f7f7; }
+.ap-slide img { max-width: 100%; max-height: 60vh; object-fit: contain; }
+
+/* Default AP content slides */
+.ap-slide-default::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 170px;
+  height: 115px;
+  background: var(--ap-red);
+  clip-path: polygon(0 38%, 0 100%, 100% 100%);
+  z-index: 0;
+}
+
+.ap-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--ap-footer-height);
+  display: flex;
+  align-items: center;
+  z-index: 4;
+  pointer-events: none;
+  font-size: 0.52rem;
+  color: #b4b4b4;
+}
+
+.ap-footer-mark {
+  height: 44px;
+  width: 172px;
+  background: var(--ap-red);
+  display: flex;
+  align-items: center;
+  padding-left: 9px;
+  clip-path: polygon(0 0, 86% 0, 100% 50%, 86% 100%, 0 100%);
+}
+
+.ap-footer-mark img {
+  width: 92px;
+  max-height: 24px;
+  object-fit: contain;
+  object-position: left center;
+  opacity: 0.97;
+}
+
+.ap-footer-meta {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-left: 20px;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.ap-footer-page {
+  margin-left: auto;
+  margin-right: 38px;
+  color: #d0d0d0;
+}
+
+/* AP title master: based on the red AP PowerPoint title slide.
+   Uses imported theme assets in Vue, so PDF export and GitHub Pages subpaths work reliably. */
+.ap-title-master {
+  background: var(--ap-red);
+  color: white;
+}
+
+.ap-title-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.ap-title-master::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(173, 15, 10, 0.06);
+  z-index: 1;
+}
+
+.ap-title-ribbon {
+  position: absolute;
+  left: -2px;
+  bottom: -2px;
+  width: 50%;
+  height: 26%;
+  background: white;
+  clip-path: polygon(0 0, 36% 0, 48% 50%, 36% 100%, 0 100%);
+  z-index: 3;
+}
+
+.ap-title-logo {
+  position: absolute;
+  left: 42px;
+  bottom: 58px;
+  width: 215px;
+  height: auto;
+  z-index: 4;
+}
+
+.ap-title-brand {
+  position: absolute;
+  right: 58px;
+  bottom: 72px;
+  color: white;
+  font-weight: 700;
+  font-size: 1.0rem;
+  letter-spacing: -0.02em;
+  z-index: 4;
+}
+
+.ap-title-content {
+  position: absolute;
+  left: 86px;
+  top: 76px;
+  right: 110px;
+  bottom: 198px;
+  z-index: 4;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ap-title-kicker {
+  color: white !important;
+  font-size: 0.95rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.86;
+  font-weight: 700;
+  margin: 0 0 0.75rem !important;
+}
+
+
+.ap-title-subtitle {
+  color: white !important;
+  font-size: 1.32rem !important;
+  line-height: 1.25;
+  font-weight: 400;
+  opacity: 0.96;
+  margin: 0;
+  max-width: 760px;
+}
+
+.ap-title-master h1 {
+  color: white;
+  font-size: 3.2rem;
+  max-width: 860px;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  margin-top: 0;
+  margin-bottom: 0.7rem;
+}
+
+.ap-title-master h2,
+.ap-title-master h3,
+.ap-title-master p,
+.ap-title-master li {
+  color: white;
+}
+
+.ap-title-master h2 {
+  font-size: 1.55rem;
+  font-weight: 400;
+  opacity: 0.96;
+  margin-top: 0.1rem;
+}
+
+.ap-section-content {
+  justify-content: center;
+}
+
+.ap-cover-links {
+  position: absolute;
+  right: 58px;
+  bottom: 116px;
+  z-index: 5;
+}
+
+.ap-resource-links {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.ap-resource-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  padding: 0.28rem 0.56rem;
+  border: 1px solid rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.13);
+  color: white !important;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  backdrop-filter: blur(2px);
+  text-decoration: none !important;
+}
+
+.ap-resource-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45rem;
+  height: 0.76rem;
+  border-radius: 999px;
+  background: white;
+  color: var(--ap-red);
+  font-size: 0.46rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.ap-course-note {
+  margin-top: 0.9rem;
+  border-left: 8px solid var(--ap-red);
+  background: #f4f4f4;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  color: var(--ap-dark);
+  max-height: 34vh;
+  overflow: auto;
+}
+.ap-course-note__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ececec;
+  color: var(--ap-red);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.28rem 0.55rem;
+}
+.ap-course-note__title::before {
+  content: "";
+  display: inline-block;
+  width: 0.56rem;
+  height: 0.56rem;
+  background: var(--ap-red);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.ap-course-note__body { padding: 0.62rem 0.8rem 0.72rem; }
+.ap-course-note__body p,
+.ap-course-note__body li { font-size: 0.94rem; line-height: 1.34; }
+.ap-course-note__body p:last-child,
+.ap-course-note__body ul:last-child,
+.ap-course-note__body ol:last-child { margin-bottom: 0; }
+
+.ap-two-cols { column-count: 2; column-gap: 2.2rem; }
+.ap-two-cols h1,
+.ap-two-cols h2,
+.ap-two-cols h3,
+.ap-two-cols .ap-course-note,
+.ap-two-cols pre,
+.ap-two-cols table { break-inside: avoid; }
+
+.ap-callout,
+.ap-kleurblok {
+  background: var(--ap-red);
+  color: white;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
+}
+
+.ap-line,
+.ap-standaardlijn {
+  height: 3px;
+  background: var(--ap-light);
+  border: 0;
+  margin: 1rem 0;
+}
+
+.ap-swatches { display: flex; gap: 0.18rem; margin: 0.8rem 0; }
+.ap-swatches span { display: block; width: 1.3rem; height: 0.82rem; background: var(--swatch); }
+
+.slidev-vclick-target { transition: opacity 180ms ease, transform 180ms ease; }

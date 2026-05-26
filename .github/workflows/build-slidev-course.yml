@@ -1,0 +1,110 @@
+name: Build and deploy Slidev AP course
+
+on:
+  workflow_call:
+    inputs:
+      engine-repository:
+        description: Repository containing this engine.
+        required: false
+        type: string
+        default: warddr/slidev-ap-engine
+      engine-ref:
+        description: Branch, tag, or commit of the engine repository.
+        required: false
+        type: string
+        default: main
+      base-path:
+        description: GitHub Pages base path. Leave empty to use /<repo-name>/.
+        required: false
+        type: string
+        default: ""
+      node-version:
+        description: Node.js version.
+        required: false
+        type: string
+        default: "22"
+      skip-export:
+        description: Skip PDF export, useful for debugging builds.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout course repository
+        uses: actions/checkout@v4
+        with:
+          path: course
+
+      - name: Checkout Slidev AP engine
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.engine-repository }}
+          ref: ${{ inputs.engine-ref }}
+          path: engine
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: engine/package.json
+
+      - name: Install dependencies
+        working-directory: engine
+        run: npm install
+
+      - name: Install Chromium for Slidev export
+        working-directory: engine
+        run: npx playwright install --with-deps chromium
+
+      - name: Compute base path
+        id: base
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.base-path }}" ]; then
+            BASE="${{ inputs.base-path }}"
+          else
+            REPO="${GITHUB_REPOSITORY#*/}"
+            BASE="/${REPO}/"
+          fi
+          [[ "$BASE" == /* ]] || BASE="/${BASE}"
+          [[ "$BASE" == */ ]] || BASE="${BASE}/"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+      - name: Build course
+        working-directory: engine
+        run: |
+          EXTRA=""
+          if [ "${{ inputs.skip-export }}" = "true" ]; then EXTRA="--skip-export"; fi
+          node scripts/build-course.mjs --course ../course --out ../site --base "${{ steps.base.outputs.base }}" $EXTRA
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

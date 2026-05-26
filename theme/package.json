@@ -1,0 +1,30 @@
+{
+  "name": "slidev-theme-ap",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "AP Hogeschool Antwerpen inspired Slidev theme.",
+  "keywords": [
+    "slidev-theme",
+    "slidev",
+    "ap"
+  ],
+  "main": "index.ts",
+  "slidev": {
+    "defaults": {
+      "aspectRatio": "16/9",
+      "canvasWidth": 1280,
+      "theme": "slidev-theme-ap",
+      "fonts": {
+        "sans": "Arial",
+        "mono": "Cascadia Code, Fira Code, Consolas, monospace"
+      },
+      "colorSchema": "light",
+      "highlighter": "shiki",
+      "lineNumbers": false,
+      "transition": "slide-left"
+    }
+  },
+  "dependencies": {
+    "@slidev/types": "52.15.2"
+  }
+}
