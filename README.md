@@ -329,3 +329,8 @@ De optionele frontmatter `subtitle` wordt niet meer getoond op de automatisch ge
 ## Directe links naar slides
 
 De build maakt automatisch fallback-pagina's zoals `h01-intro/2/index.html`. Daardoor werken links vanuit `notes.html` of cursusmateriaal rechtstreeks naar `h01-intro/2/`, ook op statische hosting zoals GitHub Pages. Zonder deze fallback zou Slidev de route pas kennen nadat de SPA via `h01-intro/` geladen is.
+
+
+## v0.5.1 fix
+
+Local chapter assets referenced as `images/foo.png` are normalized to `./images/foo.png` during build. This avoids Vite/Rolldown resolving chapter images as bare imports when Markdown files live in `slides/<chapter>/index.md`.

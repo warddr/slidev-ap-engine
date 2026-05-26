@@ -14,6 +14,7 @@ import {
   slugify,
   splitFrontmatter,
   transformNotesAndCollect,
+  normalizeRelativeAssetPaths,
   injectFrontmatter,
   writeNotesHtml,
   writeCourseIndex,
@@ -177,7 +178,7 @@ async function buildDeck({ config, deck, workRoot }) {
     ? transformed.notes.map(note => ({ ...note, slide: note.slide + 1 }))
     : transformed.notes
 
-  const generated = injectFrontmatter(finalBody, fm)
+  const generated = injectFrontmatter(normalizeRelativeAssetPaths(finalBody), fm)
   const entry = path.join(sourceTargetDir, path.basename(deck.file))
   await fs.writeFile(entry, generated, 'utf8')
 

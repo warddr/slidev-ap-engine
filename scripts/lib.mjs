@@ -138,6 +138,27 @@ export function transformNotesAndCollect(body, options = {}) {
   return { body: transformedChunks.join('\n'), notes, notesMode }
 }
 
+
+export function normalizeRelativeAssetPaths(markdown) {
+  // Slidev/Vite treats paths like "images/foo.png" inside Markdown/HTML as
+  // bare imports in some contexts. Prefix local chapter assets with "./" so
+  // they resolve relative to the deck file that the engine copies into the
+  // temporary build directory.
+  let text = String(markdown || '')
+  const folders = '(?:images|img|media|downloads|files)'
+
+  // Markdown images/links: ![](images/a.png) or [file](downloads/a.pdf)
+  text = text.replace(new RegExp(`(\\[[^\\]]*\\]\\()(${folders}\\/[^)\\s]+)`, 'g'), '$1./$2')
+
+  // HTML attributes: <img src="images/a.png">, <a href='downloads/a.pdf'>
+  text = text.replace(new RegExp(`(\\b(?:src|href)=(["']))(${folders}\\/[^"']+)(\\2)`, 'g'), '$1./$3$4')
+
+  // CSS-style urls in inline styles: url(images/a.png)
+  text = text.replace(new RegExp(`url\\((['"]?)(${folders}\\/[^)'"\\s]+)\\1\\)`, 'g'), 'url($1./$2$1)')
+
+  return text
+}
+
 export function injectFrontmatter(source, fm) {
   // The source passed to the engine has already had its original document
   // front matter removed. Always prepend the generated global front matter.
