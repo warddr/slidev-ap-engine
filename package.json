@@ -1,24 +1,29 @@
 {
   "name": "slidev-ap-engine",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "Central Slidev build engine and AP theme for course slide decks.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "build:course": "node scripts/build-course.mjs",
     "preview:course": "node scripts/preview-course.mjs",
     "migrate:hugo": "node scripts/migrate-hugo-to-slidev.mjs"
   },
   "dependencies": {
-    "@slidev/cli": "52.15.2",
-    "@slidev/theme-default": "latest",
-    "@slidev/types": "52.15.2",
+    "@slidev/cli": "53.0.0",
+    "@slidev/parser": "53.0.0",
+    "@slidev/types": "53.0.0",
     "fast-glob": "^3.3.3",
     "fs-extra": "^11.3.2",
     "markdown-it": "^14.1.0",
-    "playwright-chromium": "^1.55.0",
+    "playwright-chromium": "1.64.0",
     "slidev-theme-ap": "file:./theme",
     "yaml": "^2.8.1"
   },
-  "devDependencies": {}
+  "overrides": {
+    "magic-string@^1": "1.4.2"
+  }
 }

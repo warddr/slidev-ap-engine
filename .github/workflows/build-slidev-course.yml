@@ -1,5 +1,9 @@
 name: Build and deploy Slidev AP course
 
+# Reusable workflow: een vakrepo roept dit op (zie examples/course-repo/
+# .github/workflows/deploy.yml). Bouwt alle decks + PDF's met deze engine en
+# publiceert het resultaat op GitHub Pages van de vakrepo.
+
 on:
   workflow_call:
     inputs:
@@ -22,7 +26,7 @@ on:
         description: Node.js version.
         required: false
         type: string
-        default: "22"
+        default: "24"
       skip-export:
         description: Skip PDF export, useful for debugging builds.
         required: false
@@ -43,27 +47,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout course repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: course
 
       - name: Checkout Slidev AP engine
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ inputs.engine-repository }}
           ref: ${{ inputs.engine-ref }}
           path: engine
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
-          cache-dependency-path: engine/package.json
+          cache-dependency-path: engine/package-lock.json
 
+      # npm ci installeert exact de versies uit package-lock.json. Met
+      # `npm install` kwam elke run iets nieuwers binnen, en zo brak de build
+      # in oktober 2026 op magic-string 1.4.3 zonder dat er iets veranderd was.
       - name: Install dependencies
         working-directory: engine
-        run: npm install
+        run: npm ci
 
       - name: Install Chromium for Slidev export
         working-directory: engine
@@ -72,12 +79,13 @@ jobs:
       - name: Compute base path
         id: base
         shell: bash
+        env:
+          BASE_INPUT: ${{ inputs.base-path }}
         run: |
-          if [ -n "${{ inputs.base-path }}" ]; then
-            BASE="${{ inputs.base-path }}"
+          if [ -n "$BASE_INPUT" ]; then
+            BASE="$BASE_INPUT"
           else
-            REPO="${GITHUB_REPOSITORY#*/}"
-            BASE="/${REPO}/"
+            BASE="/${GITHUB_REPOSITORY#*/}/"
           fi
           [[ "$BASE" == /* ]] || BASE="/${BASE}"
           [[ "$BASE" == */ ]] || BASE="${BASE}/"
@@ -85,16 +93,19 @@ jobs:
 
       - name: Build course
         working-directory: engine
+        env:
+          BASE: ${{ steps.base.outputs.base }}
+          SKIP_EXPORT: ${{ inputs.skip-export }}
         run: |
           EXTRA=""
-          if [ "${{ inputs.skip-export }}" = "true" ]; then EXTRA="--skip-export"; fi
-          node scripts/build-course.mjs --course ../course --out ../site --base "${{ steps.base.outputs.base }}" $EXTRA
+          if [ "$SKIP_EXPORT" = "true" ]; then EXTRA="--skip-export"; fi
+          node scripts/build-course.mjs --course ../course --out ../site --base "$BASE" $EXTRA
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
@@ -107,4 +118,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

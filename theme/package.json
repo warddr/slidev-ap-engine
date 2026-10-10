@@ -25,6 +25,6 @@
     }
   },
   "dependencies": {
-    "@slidev/types": "52.15.2"
+    "@slidev/types": "53.0.0"
   }
 }
