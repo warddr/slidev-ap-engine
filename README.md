@@ -12,11 +12,11 @@ Een vakrepo bevat enkel Markdown en afbeeldingen. Deze engine maakt er per deck
 een Slidev-presentatie en een PDF van, plus een vakpagina met alle decks, en
 publiceert alles via GitHub Pages van de vakrepo.
 
-De AP-look komt uit de PowerPoint-template `24_TEM_AP_Presentatie_algemeen.pptx`
-(rode cover, witte ribbon, rode hoek en footer) en de bouwstenen uit het
-sjabloon van de Hugo-site (cards, tijdlijnen, balken, callouts, …): alles wat
-daar een shortcode was, is hier een Vue-component met dezelfde naam en
-dezelfde opties. `examples/course-repo/slides/componenten` toont ze allemaal.
+De decks zien eruit zoals de reveal.js-decks van de Hugo-site (AP-kleuren uit
+de PowerPoint-template `24_TEM_AP_Presentatie_algemeen.pptx`, rode
+titelslides, AP-driehoek linksonder), met dezelfde bouwstenen (cards,
+tijdlijnen, balken, callouts, …): alles wat daar een shortcode was, is hier
+een Vue-component met dezelfde naam en dezelfde opties. `examples/course-repo/slides/componenten` toont ze allemaal.
 
 ## Installatie
 
@@ -135,10 +135,12 @@ class: compact-table
 # Slide met een grote tabel
 ```
 
-- `#` is de slidetitel (in AP-rood).
+- `#` is de slidetitel (hoofdletters, AP-rood, gecentreerd).
 - Front matter van een slide staat **meteen** na de `---`; een gewone slide
   begint met een lege regel na `---`.
-- `layout: section` = rode tussentitel. Er zijn ook `two-cols` en `blank`.
+- `layout: section` = rode tussentitel: `#` groot, `##` zo groot als een
+  slidetitel (zoals `## ☕ Pauze` in de Hugo-decks). Er zijn ook `two-cols`
+  en `blank`.
 
 ### Componenten
 
@@ -229,7 +231,8 @@ npm run migrate:hugo -- --input ../cursus/site/content/iot-datalab-new --output 
 Het script zet de TOML-front matter om (`title`, `weight` → `order`,
 `ai_label` → `aiLabel`), maakt van de eerste titelslide het automatische
 titelblad (`# Vak` / `## Les`), van `{{< slide class="title" >}}` een
-`layout: section`, verhoogt de koppen (`##` → `#`) en zet elke shortcode om
+`layout: section` (met dezelfde koppen), verhoogt op gewone slides de koppen
+(`##` → `#`) en zet elke shortcode om
 naar de component hierboven, ook in codevoorbeelden. Afbeeldingen, audio, …
 naast het deck gaan mee. Wat niet automatisch kan (`{{< section >}}`,
 onbekende shortcodes, extra slide-attributen) verschijnt als waarschuwing met
@@ -300,10 +303,20 @@ unocss/unocss#5373). Die regel mag weg zodra dat opgelost is.
 
 ## Thema-instellingen
 
-- Canvas 1280×720 (16:9), basistekst 36 px (`--ap-font-size` in
-  `theme/styles/index.css`); alle componenten rekenen in `em`.
-- Lettertype Arial (op Linux: Liberation Sans). Geen webfonts: de decks laden
-  niets van Google of een andere externe server.
+Het thema ziet eruit zoals de reveal.js-decks van de Hugo-site
+(`site/assets/ap-theme.scss`): rode titel- en tussentitelslides, titels in
+hoofdletters en AP-rood, inhoud verticaal gecentreerd, de rode AP-driehoek
+linksonder (`ap-red-below-right.png`), Monokai voor code.
+
+- Canvas 16:9, 1556×875: achtergrond en driehoek vullen het brede scherm, de
+  inhoud staat in een kolom van 1200 px in het midden, zoals reveal.js een
+  deck van 1200×875 op een 16:9-scherm toont. PDF's zijn ook 16:9.
+- Basistekst 38 px (`--ap-font-size`), koppen in de grootte van toen: op een
+  gewone slide is `#` 1,6 em (de `##` van de Hugo-decks), op een titel- of
+  tussentitelslide is `#` 2,5 em en `##` 1,6 em.
+- Lettertypes zoals in Hugo: Century Gothic (tekst) en Source Sans Pro
+  (koppen), anders Helvetica/Arial. Geen webfonts: de decks laden niets van
+  Google of een andere externe server.
 - Afbeeldingen van het thema staan in `theme/assets/` en worden mee gebundeld;
   `ap-theme/` in de root van de site (favicon, achtergrond van de vakpagina en
   `notes.html`) staat er één keer per vak.

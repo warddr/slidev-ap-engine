@@ -4,7 +4,8 @@ Extracted from `24_TEM_AP_Presentatie_algemeen.pptx`.
 
 ## Slide size
 
-- 16:9 widescreen
+- 16:9 widescreen (canvas 1556×875, content column 1200 px like the reveal.js
+  decks of the Hugo site)
 - PowerPoint internal size: 9144000 x 5143500 EMU
 
 ## Theme colors
@@ -25,18 +26,19 @@ Orange, magenta, teal and green as measured for the Hugo site's
 ## Typography
 
 - PowerPoint theme font: Arial
-- The Slidev theme uses system Arial/Helvetica, without bundling fonts and
-  without web fonts (`fonts.provider: none`).
+- The Slidev theme follows the Hugo site: Century Gothic for text, Source Sans
+  Pro (uppercase, 600) for headings, Helvetica as fallback. No bundled fonts,
+  no web fonts (`fonts.provider: none`).
 
 ## Assets
 
-The theme uses these assets extracted from the provided PPTX
-(`ap-background.jpg` recompressed in October 2026: 1920 px wide, 376 kB
-instead of 2362 px and 1 MB):
+The theme uses the assets of the Hugo site (`site/static/`):
 
-- `theme/assets/ap-background.jpg`
-- `theme/assets/ap-logo-color.png`
-- `theme/assets/ap-logo-white.png`
+- `theme/assets/ap-background.jpg`: title and section background (sRGB, 1920 px,
+  340 kB; recompressed from the 6.9 MB CMYK original in October 2026)
+- `theme/assets/ap-red-below-right.png`: red AP triangle bottom left, at 26 %
+  of the slide height
+- `theme/assets/ap-logo-color.png`: favicon
 - `theme/assets/ai-label/*.png`: EU icons for AI-generated or AI-modified content
   (European Commission, Art. 50 AI Act), copied from the Hugo site
 

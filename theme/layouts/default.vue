@@ -1,5 +1,6 @@
+<!-- Gewone slide zoals in de reveal-decks: wit, rode AP-driehoek linksonder,
+     inhoud verticaal en horizontaal gecentreerd. -->
 <script setup lang="ts">
-import ApFooter from '../components/ApFooter.vue'
 import ApFitContent from '../components/ApFitContent.vue'
 </script>
 
@@ -8,11 +9,5 @@ import ApFitContent from '../components/ApFitContent.vue'
     <ApFitContent>
       <slot />
     </ApFitContent>
-    <ApFooter
-      :course="$slidev.configs.course || $slidev.configs.title"
-      :chapter="$frontmatter.chapter || $slidev.configs.chapter"
-      :date="$slidev.configs.apDate"
-      :page="$slidev.nav.currentPage"
-    />
   </main>
 </template>

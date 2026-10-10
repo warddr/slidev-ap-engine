@@ -74,7 +74,8 @@ export function convertHugoDeck(source, { file = 'deck' } = {}) {
     const rest = classes.filter(c => c !== 'title')
     if (rest.length) slideFm.class = rest.join(' ')
 
-    out.push({ frontmatter: Object.keys(slideFm).length ? slideFm : null, content: convertSlideBody(text, warn) })
+    // Tussentitels houden hun koppen (## blijft ##), zoals de grootte in Hugo.
+    out.push({ frontmatter: Object.keys(slideFm).length ? slideFm : null, content: convertSlideBody(text, warn, { promote: !slideFm.layout }) })
   })
 
   if (!frontmatter.title && meta.title) {
@@ -189,13 +190,14 @@ function parseAttrs(str) {
   return { named, positional }
 }
 
-function convertSlideBody(text, warn) {
+function convertSlideBody(text, warn, { promote = true } = {}) {
   // Codeblokken blijven ongemoeid, behalve ge-escapete voorbeelden
   // ({{</* card */>}}): die tonen voortaan de nieuwe schrijfwijze.
   const converted = splitCodeFences(text)
     .map(part => part.code ? convertCodeExample(part.text) : convertMarkdown(part.text, warn))
     .filter(piece => piece.trim())
-  return promoteHeadings(collapseBlankLines(converted.join('\n\n'))).trim()
+  const body = collapseBlankLines(converted.join('\n\n'))
+  return (promote ? promoteHeadings(body) : body).trim()
 }
 
 // Een codeblok met ge-escapete Hugo-voorbeelden wordt het voorbeeld in de

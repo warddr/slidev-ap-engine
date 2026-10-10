@@ -27,7 +27,9 @@ jobs:
         run: |
           for deck in componenten h01-intro; do
             test -s "site/$deck/index.html"
-            test -s "site/$deck/slides.pdf"
+            test -s "site/$deck/presenter/1/index.html"
+            # een witte PDF is een paar honderd bytes per pagina
+            test "$(stat -c %s "site/$deck/slides.pdf")" -gt 100000
           done
           test -s site/h01-intro/notes.html
           test ! -e site/componenten/notes.html

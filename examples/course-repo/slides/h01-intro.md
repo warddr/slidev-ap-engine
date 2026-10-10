@@ -36,4 +36,4 @@ Standaard kleurblok in AP-rood.
 
 <hr class="ap-line" />
 
-Standaard tekstvlak met AP-footer, slide-nummering en cursusmetadata.
+Standaard tekstvlak, gecentreerd, met de AP-driehoek linksonder.

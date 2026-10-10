@@ -2,7 +2,7 @@
   "name": "slidev-theme-ap",
   "version": "0.2.0",
   "type": "module",
-  "description": "AP Hogeschool Antwerpen inspired Slidev theme.",
+  "description": "AP Hogeschool Antwerpen theme for Slidev, same look as the reveal.js course decks.",
   "keywords": [
     "slidev-theme",
     "slidev",
@@ -11,10 +11,10 @@
   "slidev": {
     "defaults": {
       "aspectRatio": "16/9",
-      "canvasWidth": 1280,
+      "canvasWidth": 1556,
       "fonts": {
-        "sans": "Arial",
-        "mono": "Cascadia Code, Fira Code, Consolas, DejaVu Sans Mono, monospace",
+        "sans": "Century Gothic, Helvetica",
+        "mono": "monospace",
         "provider": "none"
       },
       "colorSchema": "light",

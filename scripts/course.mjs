@@ -298,14 +298,14 @@ function buildHeadmatter(config, deck, { addTitlePage, pdfUrl, notesUrl, favicon
 function makeTitlePage(config, deck) {
   const esc = (v) => String(v || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const course = deck.course || config.title || ''
+  const author = deck.author || config.author || ''
 
-  // Use HTML instead of Markdown headings here. This avoids literal '#'/ '##'
-  // text appearing in PDF exports and keeps the AP title page strict:
-  // course label + lesson title only. The optional `subtitle` front matter is
-  // intentionally not rendered on the generated AP title page.
+  // Zoals de titelslide van de reveal-decks: vak, les, auteur. HTML i.p.v.
+  // Markdown-koppen, zodat er nooit een losse '#' in de PDF belandt.
   return [
-    course ? `<div class="ap-title-kicker">${esc(course)}</div>` : '',
-    deck.title ? `<div class="ap-title-subtitle">${esc(deck.title)}</div>` : '',
+    course ? `<h1>${esc(course)}</h1>` : '',
+    deck.title ? `<h2>${esc(deck.title)}</h2>` : '',
+    author ? `<p>${esc(author)}</p>` : '',
   ].filter(Boolean).join('\n')
 }
 

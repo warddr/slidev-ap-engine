@@ -76,9 +76,7 @@ async function buildDeck({ config, deck, workRoot }) {
   // This keeps links from notes.html and course text shareable on GitHub Pages.
   await writeSlideRouteFallbacks(deckOut, rendered.slideCount)
 
-  if (!skipExport) {
-    await run(slidevBin, ['export', entry, '--output', path.join(deckOut, 'slides.pdf'), '--timeout', '120000'], { cwd: workDir })
-  }
+  if (!skipExport) await exportPdf({ entry, workDir, pdf: path.join(deckOut, 'slides.pdf'), slideCount: rendered.slideCount })
 
   if (rendered.hasNotesPage) {
     await writeNotesHtml({ outFile: path.join(deckOut, 'notes.html'), deckTitle: deck.title, courseTitle: deck.course || config.title, notes: rendered.notes })
@@ -87,12 +85,30 @@ async function buildDeck({ config, deck, workRoot }) {
   return { slug: deck.slug, title: deck.title, hasNotesPage: rendered.hasNotesPage, hasPdf: !skipExport }
 }
 
+// Bundelt Vite tijdens de export nog afhankelijkheden (lege cache, zoals in
+// CI), dan herlaadt de pagina en wordt de PDF wit. Een lege pagina weegt een
+// paar honderd bytes, een echte slide (lettertypes, achtergrond) veel meer:
+// dan nog eens, met een warme cache. Nooit een lege PDF publiceren.
+async function exportPdf({ entry, workDir, pdf, slideCount }) {
+  const minimum = slideCount * 1024
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await run(slidevBin, ['export', entry, '--output', pdf, '--timeout', '120000'], { cwd: workDir })
+    const { size } = await fs.stat(pdf)
+    if (size >= minimum) return
+    console.warn(`\n[build] ${path.relative(outDir, pdf)} lijkt leeg (${size} bytes voor ${slideCount} slides), poging ${attempt + 1}`)
+  }
+  throw new Error(`De PDF-export van ${path.relative(outDir, pdf)} bleef leeg.`)
+}
+
 async function writeSlideRouteFallbacks(deckOut, slideCount) {
   const indexHtml = await fs.readFile(path.join(deckOut, 'index.html'), 'utf8')
-  for (let i = 1; i <= slideCount; i++) {
-    const dir = path.join(deckOut, String(i))
-    await fse.ensureDir(dir)
-    await fs.writeFile(path.join(dir, 'index.html'), indexHtml, 'utf8')
+  // /<n>/ for links to a slide, presenter/<n>/ for the presenter view (S).
+  for (const prefix of ['', 'presenter']) {
+    for (let i = 1; i <= slideCount; i++) {
+      const dir = path.join(deckOut, prefix, String(i))
+      await fse.ensureDir(dir)
+      await fs.writeFile(path.join(dir, 'index.html'), indexHtml, 'utf8')
+    }
   }
 }
 

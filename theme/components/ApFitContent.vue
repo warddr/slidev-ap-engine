@@ -1,6 +1,6 @@
 <!-- Inhoudsvlak van een slide. Loopt de inhoud toch over (lange lijst, grote
      tabel), dan wordt ze proportioneel verkleind tot ze past — op het scherm
-     en in de PDF. Zo verschijnt er nooit inhoud onder de footer of een extra
+     en in de PDF. Zo loopt er nooit inhoud van de slide af en komt er geen extra
      PDF-pagina. In de console staat welke slide verkleind werd. -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
