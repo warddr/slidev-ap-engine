@@ -33,8 +33,8 @@ async function main() {
   if (onlyDecks && !decks.length) throw new Error(`Geen deck gevonden voor --decks ${onlyDecks.join(',')}`)
   const workRoot = path.join(engineRoot, '.slidev-work', slugify(config.title || path.basename(courseDir)))
 
-  // Copy theme assets to root output as well for index and notes.
-  await copyIfExists(path.join(engineRoot, 'theme', 'public'), path.join(outDir, 'ap-theme'))
+  // Favicon and background of index.html and notes.html, once for the site.
+  await copyIfExists(path.join(engineRoot, 'theme', 'assets'), path.join(outDir, 'ap-theme'))
 
   const builtDecks = []
   for (const deck of decks) builtDecks.push(await buildDeck({ config, deck, workRoot }))
@@ -59,7 +59,7 @@ async function buildDeck({ config, deck, workRoot }) {
   await prepareDeckWorkdir({ config, deck, workDir })
 
   const deckBase = `${baseRoot}${deck.slug}/`.replace(/\/+/g, '/')
-  const rendered = await renderDeck({ config, deck, base: deckBase, notesMode: notesModeArg, pdf: !skipExport })
+  const rendered = await renderDeck({ config, deck, base: deckBase, siteBase: baseRoot, notesMode: notesModeArg, pdf: !skipExport })
   const entry = deckEntry(deck, workDir)
   await fs.writeFile(entry, rendered.markdown, 'utf8')
 

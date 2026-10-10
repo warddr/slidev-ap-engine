@@ -8,15 +8,14 @@
     "slidev",
     "ap"
   ],
-  "main": "index.ts",
   "slidev": {
     "defaults": {
       "aspectRatio": "16/9",
       "canvasWidth": 1280,
-      "theme": "slidev-theme-ap",
       "fonts": {
         "sans": "Arial",
-        "mono": "Cascadia Code, Fira Code, Consolas, monospace"
+        "mono": "Cascadia Code, Fira Code, Consolas, DejaVu Sans Mono, monospace",
+        "provider": "none"
       },
       "colorSchema": "light",
       "highlighter": "shiki",

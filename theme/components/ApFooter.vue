@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import apLogoWhite from '../public/ap-logo-white.png'
+import apLogoWhite from '../assets/ap-logo-white.png'
 
 const props = withDefaults(defineProps<{
   course?: string

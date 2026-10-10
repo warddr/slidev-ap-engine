@@ -25,16 +25,19 @@ Orange, magenta, teal and green as measured for the Hugo site's
 ## Typography
 
 - PowerPoint theme font: Arial
-- The Slidev theme uses system Arial/Helvetica, without bundling fonts.
+- The Slidev theme uses system Arial/Helvetica, without bundling fonts and
+  without web fonts (`fonts.provider: none`).
 
 ## Assets
 
-The theme uses these assets extracted from the provided PPTX:
+The theme uses these assets extracted from the provided PPTX
+(`ap-background.jpg` recompressed in October 2026: 1920 px wide, 376 kB
+instead of 2362 px and 1 MB):
 
-- `theme/public/ap-background.jpg`
-- `theme/public/ap-logo-color.png`
-- `theme/public/ap-logo-white.png`
-- `theme/public/ai-label/*.png`: EU icons for AI-generated or AI-modified content
+- `theme/assets/ap-background.jpg`
+- `theme/assets/ap-logo-color.png`
+- `theme/assets/ap-logo-white.png`
+- `theme/assets/ai-label/*.png`: EU icons for AI-generated or AI-modified content
   (European Commission, Art. 50 AI Act), copied from the Hugo site
 
 No font files are bundled.

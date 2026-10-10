@@ -1,5 +1,6 @@
 // Shared by build-course.mjs and preview-course.mjs: finding the decks of a
 // course repo and turning one deck into the Markdown file Slidev builds.
+import { existsSync, statSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import YAML from 'yaml'
@@ -17,6 +18,7 @@ import {
   normalizeRelativeAssetPaths,
   injectFrontmatter,
   splitCodeFences,
+  collapseBlankLines,
 } from './lib.mjs'
 
 // Front matter keys that only steer the engine; they never reach Slidev.
@@ -50,7 +52,7 @@ export async function loadCourse(courseDir) {
     if (fm.publish === false || fm.draft === true || deck.publish === false || deck.draft === true) continue
 
     const name = path.basename(file, '.md')
-    const defaultSlug = FOLDER_ENTRY_NAMES.includes(name.toLowerCase()) ? path.basename(path.dirname(absolute)) : name
+    const defaultSlug = isFolderEntry(file) ? path.basename(path.dirname(absolute)) : name
 
     normalized.push({
       ...deck,
@@ -61,7 +63,6 @@ export async function loadCourse(courseDir) {
       course: deck.course || fm.course || fm.subject || parsed.course || parsed.title || '',
       slug: slugify(deck.slug || fm.slug || defaultSlug),
       order: numberOrDefault(deck.order ?? fm.order, index),
-      subtitle: deck.subtitle || deck.subTitle || fm.subtitle || fm.subTitle || '',
       author: deck.author || fm.author || parsed.author || '',
       date: deck.date || deck.apDate || fm.apDate || fm.date || parsed.date || '',
       notesMode: deck.notesMode || deck.notes_mode || fm.notesMode || fm.notes_mode,
@@ -98,13 +99,16 @@ export async function loadCourse(courseDir) {
 
 // Copies everything Slidev needs for one deck into workDir, which becomes the
 // Slidev project root (Slidev serves public/, components/, ... next to the
-// entry file): the theme assets, the course-wide folders and the deck's folder.
-export async function prepareDeckWorkdir({ config, deck, workDir }) {
+// entry file): the course-wide folders and the deck's folder. The theme's
+// images are bundled by Vite; ap-theme/ (favicon, background of the course
+// pages) lives once in the root of the built site, so only a preview, which
+// has no site root, gets its own copy.
+export async function prepareDeckWorkdir({ config, deck, workDir, themeAssets = false }) {
   const { courseDir } = config
   await ensureEmptyDir(workDir)
   await fse.ensureDir(path.join(workDir, 'public'))
 
-  await copyIfExists(path.join(engineRoot, 'theme', 'public'), path.join(workDir, 'public', 'ap-theme'))
+  if (themeAssets) await copyIfExists(path.join(engineRoot, 'theme', 'assets'), path.join(workDir, 'public', 'ap-theme'))
   for (const dir of ['public', 'components', 'snippets', 'layouts', 'styles', 'setup']) {
     await copyIfExists(path.join(courseDir, dir), path.join(workDir, dir))
   }
@@ -122,14 +126,39 @@ export async function syncDeckAssets({ deck, workDir }) {
   const sourceDir = path.dirname(deck.absolute)
   // The deck itself is written separately by renderDeck(); copying the raw
   // file over it would briefly show the unprocessed Markdown in a preview.
-  await fse.copy(sourceDir, workDir, { overwrite: true, filter: src => src !== deck.absolute })
-  await fse.copy(sourceDir, path.join(workDir, 'public'), { overwrite: true, filter: src => !src.endsWith('.md') })
+  // A flat deck (slides/h01.md) shares its folder with the folders of other
+  // decks (slides/les02/index.md): those stay out.
+  const ownFolder = isFolderEntry(deck.file)
+  const keep = src => src !== deck.absolute && (ownFolder || src === sourceDir || !isDeckFolder(src))
+  await fse.copy(sourceDir, workDir, { overwrite: true, filter: keep })
+  await fse.copy(sourceDir, path.join(workDir, 'public'), { overwrite: true, filter: src => keep(src) && !src.endsWith('.md') })
+}
+
+// One changed file of the deck's folder (for the preview), or its removal.
+export async function syncDeckFile({ deck, workDir, file }) {
+  const sourceDir = path.dirname(deck.absolute)
+  const relative = path.relative(sourceDir, file)
+  const top = path.join(sourceDir, relative.split(path.sep)[0])
+  if (!isFolderEntry(deck.file) && top !== file && existsSync(top) && isDeckFolder(top)) return
+  const targets = [path.join(workDir, relative), path.join(workDir, 'public', relative)]
+  if (!existsSync(file)) return Promise.all(targets.map(t => fse.remove(t)))
+  if (statSync(file).isDirectory()) return
+  await Promise.all(targets.map(t => fse.copy(file, t, { overwrite: true })))
+}
+
+function isFolderEntry(file) {
+  return FOLDER_ENTRY_NAMES.includes(path.basename(file, '.md').toLowerCase())
+}
+
+function isDeckFolder(dir) {
+  return statSync(dir).isDirectory() && FOLDER_ENTRY_NAMES.some(name => existsSync(path.join(dir, `${name}.md`)))
 }
 
 // Turns the author's Markdown into the Markdown file Slidev builds: AP title
 // page, headmatter, notes in the requested mode. Returns the generated text,
 // the notes per (visible) slide number and the number of visible slides.
-export async function renderDeck({ config, deck, base, notesMode: notesModeOverride, pdf = true }) {
+// base = URL of the deck, siteBase = URL of the course pages (ap-theme/).
+export async function renderDeck({ config, deck, base, siteBase = base, notesMode: notesModeOverride, pdf = true }) {
   const notesMode = normalizeNotesMode(notesModeOverride || deck.notesMode || config.notesMode)
   const { body } = splitFrontmatter(await fs.readFile(deck.absolute, 'utf8'))
   const extracted = extractNotes(body)
@@ -152,7 +181,7 @@ export async function renderDeck({ config, deck, base, notesMode: notesModeOverr
     addTitlePage,
     pdfUrl: pdf ? `${base}slides.pdf` : '',
     notesUrl: hasNotesPage ? `${base}notes.html` : '',
-    faviconUrl: `${base}ap-theme/ap-logo-color.png`,
+    faviconUrl: `${siteBase}ap-theme/ap-logo-color.png`,
   })
 
   const markdown = injectFrontmatter(normalizeRelativeAssetPaths(content), headmatter)
@@ -183,7 +212,6 @@ function extractNotes(markdown) {
   return { text, notes }
 }
 
-
 function placeNotes(markdown, notes, notesMode) {
   const lines = markdown.split('\n')
   const { slides } = parseSync(markdown, 'deck.md')
@@ -195,8 +223,10 @@ function placeNotes(markdown, notes, notesMode) {
     const hidden = slide.frontmatter?.disabled || slide.frontmatter?.hide
     if (!hidden) visible++
     const ids = []
-    let lastContentLine = -1
-    for (let i = slide.start; i < slide.end; i++) {
+    // Without other content the note goes right after the slide's front
+    // matter (or separator); never inside the front matter itself.
+    let lastContentLine = slide.contentStart - 1
+    for (let i = slide.contentStart; i < slide.end; i++) {
       const match = lines[i].trim().match(/^@@AP_NOTE_(\d+)@@$/)
       if (match) {
         const id = Number(match[1])
@@ -220,7 +250,7 @@ function placeNotes(markdown, notes, notesMode) {
     if (appendAfter.has(i)) out.push(appendAfter.get(i))
   })
   return {
-    markdown: out.join('\n').replace(/\n{3,}/g, '\n\n'),
+    markdown: collapseBlankLines(out.join('\n')),
     notes: collected,
     slideCount: visible,
   }

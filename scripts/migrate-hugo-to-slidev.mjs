@@ -15,7 +15,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import fse from 'fs-extra'
-import { parseArgs } from './lib.mjs'
+import { parseArgs, splitCodeFences, collapseBlankLines } from './lib.mjs'
 
 // Front matter-sleutels van Hugo/reveal-hugo die in Slidev geen betekenis hebben.
 const DROP_KEYS = ['outputs', 'type', 'reveal_hugo', 'build', 'layout', 'weight', 'ai_label', 'title', 'draft']
@@ -112,7 +112,7 @@ function assemble(frontmatter, slides) {
     else parts.push(`\n---\n${fm}\n${slide.content}\n`)
     first = false
   }
-  return `${parts.join('\n').replace(/\n{3,}/g, '\n\n').trim()}\n`
+  return `${collapseBlankLines(parts.join('\n')).trim()}\n`
 }
 
 function splitHugoFrontmatter(source) {
@@ -157,23 +157,16 @@ function parseTomlValue(raw) {
 
 // Splits op `---`-lijnen buiten codeblokken (reveal-hugo-scheiding).
 function splitSlides(body) {
-  const slides = []
-  let current = []
-  let fence = null
-  for (const line of body.split('\n')) {
-    const marker = line.match(/^\s*(`{3,}|~{3,})/)
-    if (marker) {
-      if (!fence) fence = marker[1]
-      else if (marker[1][0] === fence[0] && marker[1].length >= fence.length) fence = null
-    }
-    if (!fence && /^---\s*$/.test(line)) {
-      slides.push(current.join('\n'))
-      current = []
+  const slides = ['']
+  for (const part of splitCodeFences(body)) {
+    if (part.code) {
+      slides[slides.length - 1] += part.text
       continue
     }
-    current.push(line)
+    const [first, ...rest] = part.text.split(/^---[ \t]*(?:\n|$)/m)
+    slides[slides.length - 1] += first
+    slides.push(...rest)
   }
-  slides.push(current.join('\n'))
   return slides.filter(s => s.trim())
 }
 
@@ -199,42 +192,25 @@ function parseAttrs(str) {
 function convertSlideBody(text, warn) {
   // Codeblokken blijven ongemoeid, behalve ge-escapete voorbeelden
   // ({{</* card */>}}): die tonen voortaan de nieuwe schrijfwijze.
-  const segments = []
-  let buffer = []
-  let fence = null
-  for (const line of text.split('\n')) {
-    const marker = line.match(/^\s*(`{3,}|~{3,})/)
-    if (!fence && marker) {
-      if (buffer.length) segments.push({ code: false, text: buffer.join('\n') })
-      buffer = [line]
-      fence = marker[1]
-      continue
-    }
-    buffer.push(line)
-    if (fence && marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && line.trim() === marker[1]) {
-      segments.push({ code: true, text: buffer.join('\n') })
-      buffer = []
-      fence = null
-    }
-  }
-  if (buffer.length) segments.push({ code: Boolean(fence), text: buffer.join('\n') })
-
-  const converted = segments.map(seg => seg.code ? convertCodeExample(seg.text) : convertMarkdown(seg.text, warn))
-  return promoteHeadings(converted.join('\n\n').replace(/\n{3,}/g, '\n\n')).trim()
+  const converted = splitCodeFences(text)
+    .map(part => part.code ? convertCodeExample(part.text) : convertMarkdown(part.text, warn))
+    .filter(piece => piece.trim())
+  return promoteHeadings(collapseBlankLines(converted.join('\n\n'))).trim()
 }
 
 // Een codeblok met ge-escapete Hugo-voorbeelden wordt het voorbeeld in de
 // nieuwe schrijfwijze, met dezelfde omzetting als de slides zelf.
 function convertCodeExample(block) {
   if (!/\{\{[<%]\/\*/.test(block)) return block
-  const lines = block.split('\n')
+  const lines = block.replace(/\n$/, '').split('\n')
   const open = lines.shift()
   const close = lines.length && /^\s*(`{3,}|~{3,})\s*$/.test(lines[lines.length - 1]) ? lines.pop() : null
   const inner = lines.join('\n')
     .replace(/\{\{<\/\*\s*([\s\S]*?)\s*\*\/>\}\}/g, '{{< $1 >}}')
     .replace(/\{\{%\/\*\s*([\s\S]*?)\s*\*\/%\}\}/g, '{{% $1 %}}')
-  const converted = convertMarkdown(inner, () => {})
-  return [open, converted, close].filter(l => l !== null).join('\n')
+  // Gegenereerde voorbeeldcode: hier mogen lege regels wel samen.
+  const converted = convertMarkdown(inner, () => {}).replace(/\n{3,}/g, '\n\n')
+  return `${[open, converted, close].filter(l => l !== null).join('\n')}\n`
 }
 
 function convertEscapedExamples(text) {
@@ -399,21 +375,9 @@ function joinParts(parts) {
 
 // In de Hugo-decks is ## de slidetitel; in Slidev (en in dit thema) is dat #.
 function promoteHeadings(text) {
-  const lines = text.split('\n')
-  let fence = null
-  const isHeading = []
-  lines.forEach((line, i) => {
-    const marker = line.match(/^\s*(`{3,}|~{3,})/)
-    if (marker) {
-      if (!fence) fence = marker[1]
-      else if (marker[1][0] === fence[0]) fence = null
-      return
-    }
-    if (!fence && /^#{1,6}\s/.test(line)) isHeading[i] = true
-  })
-  const hasH1 = lines.some((line, i) => isHeading[i] && /^#\s/.test(line))
-  if (hasH1) return text
-  return lines.map((line, i) => isHeading[i] ? line.slice(1) : line).join('\n')
+  const parts = splitCodeFences(text)
+  if (parts.some(part => !part.code && /^#\s/m.test(part.text))) return text
+  return parts.map(part => part.code ? part.text : part.text.replace(/^#(#{1,5}\s)/gm, '$1')).join('')
 }
 
 async function convertFile(input, output, { copyAssets = true } = {}) {

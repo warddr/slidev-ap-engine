@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import apBackground from '../public/ap-background.jpg'
-import apLogoColor from '../public/ap-logo-color.png'
+import apBackground from '../assets/ap-background.jpg'
+import apLogoColor from '../assets/ap-logo-color.png'
 </script>
 
 <template>

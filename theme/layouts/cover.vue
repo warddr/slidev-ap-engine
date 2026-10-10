@@ -2,18 +2,18 @@
 import { computed } from 'vue'
 import { useSlideContext } from '@slidev/client'
 import PdfLink from '../components/PdfLink.vue'
-import apBackground from '../public/ap-background.jpg'
-import apLogoColor from '../public/ap-logo-color.png'
+import apBackground from '../assets/ap-background.jpg'
+import apLogoColor from '../assets/ap-logo-color.png'
 
 // EU-icoon voor AI-inhoud (Art. 50 AI Act) rechtsboven, aan per deck of per
 // vak met `aiLabel: modified` (of generated / ai; true = modified).
-const icons = import.meta.glob('../public/ai-label/*.png', { eager: true, import: 'default' }) as Record<string, string>
+const icons = import.meta.glob('../assets/ai-label/*.png', { eager: true, import: 'default' }) as Record<string, string>
 const { $slidev } = useSlideContext()
 const aiLabel = computed(() => {
   const value = $slidev.configs.aiLabel ?? $slidev.configs.ai_label
   if (!value) return ''
   const variant = value === true ? 'modified' : String(value)
-  const icon = icons[`../public/ai-label/${variant}.png`]
+  const icon = icons[`../assets/ai-label/${variant}.png`]
   if (!icon) console.warn(`[ap-theme] aiLabel "${variant}" bestaat niet: kies modified, generated of ai`)
   return icon || ''
 })

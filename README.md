@@ -302,6 +302,10 @@ unocss/unocss#5373). Die regel mag weg zodra dat opgelost is.
 
 - Canvas 1280×720 (16:9), basistekst 36 px (`--ap-font-size` in
   `theme/styles/index.css`); alle componenten rekenen in `em`.
-- Lettertype Arial (op Linux: Liberation Sans).
+- Lettertype Arial (op Linux: Liberation Sans). Geen webfonts: de decks laden
+  niets van Google of een andere externe server.
+- Afbeeldingen van het thema staan in `theme/assets/` en worden mee gebundeld;
+  `ap-theme/` in de root van de site (favicon, achtergrond van de vakpagina en
+  `notes.html`) staat er één keer per vak.
 - Mermaid in AP-kleuren (`theme/setup/mermaid.ts`), klassieke look.
 - Compacter voor één slide: `class: text-sm` of `class: compact-table`.

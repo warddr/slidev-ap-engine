@@ -60,7 +60,8 @@ export function run(cmd, args, options = {}) {
 }
 
 export function splitFrontmatter(source) {
-  const normalized = source.replace(/^\uFEFF/, '')
+  // Ook bestanden met Windows-regeleindes (CRLF) of een BOM.
+  const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
   if (!normalized.startsWith('---\n')) return { frontmatter: '', body: normalized }
   const end = normalized.indexOf('\n---', 4)
   if (end === -1) return { frontmatter: '', body: normalized }
@@ -93,6 +94,19 @@ export function splitCodeFences(markdown) {
   return parts
 }
 
+// Hoogstens één lege regel na elkaar, behalve in codeblokken (Python heeft
+// er bewust twee tussen functies).
+export function collapseBlankLines(markdown) {
+  return splitCodeFences(String(markdown || ''))
+    .map((part, i, parts) => {
+      if (part.code) return part.text
+      const text = part.text.replace(/\n{3,}/g, '\n\n')
+      // Een codeblok eindigt al op een regeleinde.
+      return parts[i - 1]?.code ? text.replace(/^\n{2,}/, '\n') : text
+    })
+    .join('')
+}
+
 export function normalizeRelativeAssetPaths(markdown) {
   // Codevoorbeelden blijven zoals ze geschreven zijn.
   return splitCodeFences(String(markdown || ''))
@@ -106,7 +120,7 @@ function normalizeAssetPathsInText(markdown) {
   // they resolve relative to the deck file that the engine copies into the
   // temporary build directory.
   let text = String(markdown || '')
-  const folders = '(?:images|img|media|downloads|files)'
+  const folders = '(?:images|img|media|audio|video|downloads|files)'
 
   // Markdown images/links: ![](images/a.png) or [file](downloads/a.pdf)
   text = text.replace(new RegExp(`(\\[[^\\]]*\\]\\()(${folders}\\/[^)\\s]+)`, 'g'), '$1./$2')
@@ -146,7 +160,7 @@ export async function writeNotesHtml({ outFile, deckTitle, courseTitle, notes })
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{font-family:Arial,Helvetica,sans-serif;color:var(--ap-dark);margin:0;background:var(--ap-bg);line-height:1.62;font-size:18px;}
-header{background:var(--ap-red);color:white;padding:2.6rem 3rem;background-image:linear-gradient(rgba(173,15,10,.55),rgba(173,15,10,.55)),url('./ap-theme/ap-background.jpg');background-size:cover;background-position:center;}
+header{background:var(--ap-red);color:white;padding:2.6rem 3rem;background-image:linear-gradient(rgba(173,15,10,.55),rgba(173,15,10,.55)),url('../ap-theme/ap-background.jpg');background-size:cover;background-position:center;}
 header h1{margin:0;font-size:2.5rem;line-height:1.06;max-width:980px;}header p{margin:.55rem 0 0;opacity:.94;font-size:1.05rem;}
 .wrapper{display:grid;grid-template-columns:minmax(170px,230px) minmax(0,880px);gap:2rem;max-width:1180px;margin:2rem auto 4rem;padding:0 1.2rem;align-items:start;}
 .toc{position:sticky;top:1rem;border-left:8px solid var(--ap-red);background:#f7f7f7;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.45rem;font-size:.9rem;}
