@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#e5e5e5"/>
+  <path d="M0,300 L110,180 L190,260 L260,150 L400,320 L400,400 L0,400 Z" fill="#c9c9c9"/>
+  <circle cx="300" cy="90" r="40" fill="#d9d9d9"/>
+  <text x="200" y="370" font-size="20" text-anchor="middle" fill="#888">voorbeeldfoto</text>
+</svg>

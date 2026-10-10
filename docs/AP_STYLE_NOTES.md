@@ -14,10 +14,13 @@ Extracted from `24_TEM_AP_Presentatie_algemeen.pptx`.
 | AP red / accent 1 | `#AD0F0A` |
 | dark gray | `#404040` |
 | light gray | `#E7E6E6` |
-| orange | `#F59A00` |
-| magenta | `#AD1073` |
-| cyan | `#009EAD` |
-| green | `#1D9659` |
+| orange | `#F69B00` |
+| magenta | `#AE1073` |
+| teal | `#009EAE` |
+| green | `#1D9759` |
+
+Orange, magenta, teal and green as measured for the Hugo site's
+`ap-theme.scss` (July 2026); earlier versions of this engine were one step off.
 
 ## Typography
 
@@ -31,5 +34,7 @@ The theme uses these assets extracted from the provided PPTX:
 - `theme/public/ap-background.jpg`
 - `theme/public/ap-logo-color.png`
 - `theme/public/ap-logo-white.png`
+- `theme/public/ai-label/*.png`: EU icons for AI-generated or AI-modified content
+  (European Commission, Art. 50 AI Act), copied from the Hugo site
 
 No font files are bundled.

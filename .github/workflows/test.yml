@@ -1,0 +1,38 @@
+name: Test engine
+
+# Bouwt het voorbeeldvak (met PDF's) bij elke push en pull request: zo valt
+# een kapotte build op vóór een vakrepo er last van heeft.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build example course
+        run: node scripts/build-course.mjs --course examples/course-repo --out site --base /slidev-ap-engine/
+      - name: Check output
+        run: |
+          for deck in componenten h01-intro; do
+            test -s "site/$deck/index.html"
+            test -s "site/$deck/slides.pdf"
+          done
+          test -s site/h01-intro/notes.html
+          test ! -e site/componenten/notes.html
+      - uses: actions/upload-artifact@v7
+        with:
+          name: example-site
+          path: site
+          retention-days: 7

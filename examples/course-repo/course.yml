@@ -1,0 +1,8 @@
+# Voorbeeld van een vakrepo. Alles hieronder is optioneel; de metadata van
+# elk deck staat in de front matter van zijn Markdown-bestand.
+title: Slidev AP-engine — voorbeeld
+author: Ward De Ridder
+date: "2026"
+# external: notes worden notes.html (cursusmateriaal)
+# presenter: notes enkel in de sprekersweergave (toets S)
+notesMode: external

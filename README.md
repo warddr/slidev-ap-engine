@@ -2,254 +2,245 @@
 
 Centrale build-engine en AP-huisstijl voor Slidev-cursuspresentaties.
 
-Deze engine is bedoeld voor deze structuur:
-
 ```text
 slidev-ap-engine/       # build, thema, scripts, workflows
-cursus-netwerken/       # enkel inhoud
+iot-datalab/            # enkel inhoud (een vakrepo)
 cursus-wireless/        # enkel inhoud
-cursus-devops/          # enkel inhoud
 ```
 
-De AP-look is afgeleid van de PowerPoint-template `24_TEM_AP_Presentatie_algemeen.pptx`:
+Een vakrepo bevat enkel Markdown en afbeeldingen. Deze engine maakt er per deck
+een Slidev-presentatie en een PDF van, plus een vakpagina met alle decks, en
+publiceert alles via GitHub Pages van de vakrepo.
 
-- AP-rood `#AD0F0A`
-- donkergrijs `#404040`
-- AP-accenten: oranje, magenta, cyaan en groen
-- Arial als standaardlettertype
-- rode geometrische cover-achtergrond
-- witte AP-ribbon op de cover
-- rode hoek/footer op gewone slides
+De AP-look komt uit de PowerPoint-template `24_TEM_AP_Presentatie_algemeen.pptx`
+(rode cover, witte ribbon, rode hoek en footer) en de bouwstenen uit het
+sjabloon van de Hugo-site (cards, tijdlijnen, balken, callouts, …): alles wat
+daar een shortcode was, is hier een Vue-component met dezelfde naam en
+dezelfde opties. `examples/course-repo/slides/componenten` toont ze allemaal.
 
 ## Installatie
 
+Node.js 22.12 of nieuwer (Slidev 53).
+
 ```bash
 cd slidev-ap-engine
-npm install
-npx playwright install chromium
+npm ci
+npx playwright install chromium   # enkel nodig voor de PDF-export
 ```
 
-Voor GitHub Actions wordt Chromium automatisch geïnstalleerd door de reusable workflow.
+Gebruik `npm ci`, niet `npm install`: dat installeert exact de versies uit
+`package-lock.json`. Zie *Afhankelijkheden bijwerken* hieronder.
 
-## Voorbeeld lokaal bouwen
-
-Voor lokaal testen is `--base /` het handigst:
+## Een deck bekijken tijdens het schrijven
 
 ```bash
-npm run build:course -- \
-  --course examples/course-repo \
-  --out dist/netwerken \
-  --base /
+npm run preview:course -- --course ../iot-datalab --deck les02-mqtt
 ```
 
-Zonder PDF-export, sneller tijdens debuggen:
+Opent Slidev op http://localhost:3030. Bewaar je het deck (of een afbeelding
+ernaast), dan volgt de browser vanzelf. In de vakrepo kan het korter, zie de
+README daar (`npm run dev -- les02-mqtt`).
+
+## Een vak bouwen
 
 ```bash
-npm run build:course -- \
-  --course examples/course-repo \
-  --out dist/netwerken \
-  --base / \
-  --skip-export
+npm run build:course -- --course ../iot-datalab --out dist/iot-datalab --base /iot-datalab/
 ```
 
-Voor GitHub Pages gebruik je bijvoorbeeld:
+- `--base`: het pad waarop de site komt. Voor GitHub Pages is dat `/<reponaam>/`.
+- `--skip-export`: geen PDF's, veel sneller tijdens het debuggen.
+- `--decks les02-mqtt,les03-…`: enkel deze decks.
+- `--notes-mode presenter|external|inline`: notes-modus voor deze build.
 
-```bash
-npm run build:course -- \
-  --course ../cursus-netwerken \
-  --out dist/netwerken \
-  --base /cursus-netwerken/
-```
+Lokaal bekijken: `python3 -m http.server -d dist 8000` en surf naar
+http://localhost:8000/iot-datalab/ (het pad moet overeenkomen met `--base`).
 
-Preview van één deck:
-
-```bash
-npm run preview:course -- \
-  --course examples/course-repo \
-  --deck h01-intro
-```
+Te volle slides worden passend verkleind; de build meldt welke
+(`[ap-theme] slide 24 is te vol: verkleind tot 95 %`).
 
 ## Structuur van een vakrepo
 
-`course.yml` is niet meer nodig. De engine zoekt automatisch alle Markdown-bestanden onder `slides/`.
-
 ```text
-cursus-netwerken/
+iot-datalab/
+  course.yml                  # optioneel: vaknaam, auteur, notes-modus
   slides/
-    h01-intro.md
-    h02-fysieke-laag.md
-  public/
-    h02-fysieke-laag/
+    les01-waarom-energiemanagement/
+      index.md                # het deck
+      images/                 # afbeeldingen van dit deck
+    les02-mqtt/
+      index.md
       images/
-        glasvezel.png
+  public/                     # optioneel: bestanden voor alle decks
   .github/workflows/deploy.yml
 ```
 
-## Metadata staat in de Markdown
+Elk `slides/**/*.md`-bestand is een deck. Heet het bestand `index.md`, dan is
+de mapnaam de slug (de URL); anders de bestandsnaam.
 
-Elke les beschrijft zichzelf via YAML front matter bovenaan het `.md`-bestand:
+### course.yml
+
+```yaml
+title: IoT DataLab
+description: Energiemanagement & DevOps — graduaat IoT
+author: Ward De Ridder
+date: 2026–2027
+notesMode: presenter      # zie Notes
+headmatter:               # extra Slidev-opties voor elk deck van het vak
+  aiLabel: modified
+```
+
+### Front matter van een deck
 
 ```md
 ---
-title: "Introductie"
-course: "Netwerken IoT"
-subtitle: "Slidev AP engine"
-author: "Ward De Ridder"
-apDate: "2026"
-slug: "h01-intro"
-order: 1
-notesMode: external
-# titlePage is true by default. Use false if you do not want the AP title page.
+title: Les 2 — MQTT
+order: 2
+aiLabel: modified
 ---
 
 # Eerste inhoudsslide
-
-- Punt 1
-- Punt 2
 ```
-
-Belangrijkste velden:
 
 | Veld | Doel |
 |---|---|
-| `title` | titel van de les en automatisch AP-titelblad |
-| `course` | vak/cursusnaam, gebruikt in footer en index |
-| `subtitle` | optionele ondertitel op het AP-titelblad |
-| `apDate` | datum/jaar in footer |
-| `slug` | outputmap, bijvoorbeeld `h01-intro/` |
-| `order` | volgorde op de indexpagina |
-| `notesMode` | `external`, `presenter` of `inline` |
-| `titlePage` | standaard `true`; zet op `false` om geen automatisch titelblad te maken |
+| `title` | titel van de les, op het automatische AP-titelblad en de vakpagina |
+| `course` | vaknaam (standaard die uit `course.yml`) |
+| `order` | volgorde op de vakpagina |
+| `slug` | URL van het deck (standaard map- of bestandsnaam) |
+| `aiLabel` | EU-icoon voor AI-inhoud rechtsboven op de titelslide: `modified`, `generated` of `ai` |
+| `notesMode` | `presenter`, `external` of `inline` (zie Notes) |
+| `titlePage` | `false` = geen automatisch titelblad |
+| `draft` / `publish: false` | deck niet bouwen |
 
-Zonder `slug` gebruikt de engine de bestandsnaam. Zonder `title` gebruikt de engine de eerste `# Heading`.
+Andere velden gaan gewoon naar Slidev (bv. `aspectRatio`, `fonts`).
 
-## Optionele course.yml
-
-Je mag nog altijd een `course.yml` gebruiken voor globale defaults, maar het hoeft niet. Dit is vooral handig als je dezelfde metadata niet in elk bestand wil herhalen:
-
-```yaml
-title: "Netwerken IoT"
-author: "Ward De Ridder"
-date: "2026"
-notesMode: external
-```
-
-Zolang je géén `decks:` lijst zet, blijven alle `slides/**/*.md` automatisch gevonden. Zet alleen een `decks:` lijst als je de volgorde of selectie volledig handmatig wil beheren.
-
-## Markdown voor slides
-
-Gewone slides kunnen meteen beginnen met inhoud. Het AP-titelblad wordt automatisch vóór de eerste slide gezet.
+## Slides schrijven
 
 ```md
-# Titel
+# Gewone slide
 
-- Punt 1
-- Punt 2
-```
+- Een nieuwe slide begint na elke lijn ---
 
-Volgende slides scheid je met `---`:
-
-```md
----
-
-# Volgende slide
-
-- Punt 1
-- Punt 2
-```
-
-Section slide:
-
-```md
 ---
 layout: section
 ---
 
-# Nieuwe sectie
+# Tussentitel
+## Nieuw hoofdstuk
+
+---
+class: compact-table
+---
+
+# Slide met een grote tabel
 ```
 
-## Cursusmateriaal / vroegere speaker notes
+- `#` is de slidetitel (in AP-rood).
+- Front matter van een slide staat **meteen** na de `---`; een gewone slide
+  begint met een lege regel na `---`.
+- `layout: section` = rode tussentitel. Er zijn ook `two-cols` en `blank`.
 
-De standaard is **niet op de slide zelf**. Notes blijven dicht bij de slide in Markdown staan, maar de engine haalt ze uit de presentatie en maakt automatisch een aparte `notes.html`-pagina per hoofdstuk.
+### Componenten
 
-Gebruik bij voorkeur:
+Zelfde namen en opties als de shortcodes van de Hugo-site:
+
+| Hugo-shortcode | Component |
+|---|---|
+| `cards` / `card` | `<Cards>` / `<Card color icon value title outline bare stat width>` |
+| `arrow` · `snakearrow` | `<CardArrow />` · `<SnakeArrow />` |
+| `timeline` / `step` | `<Timeline>` / `<Step color label icon>` |
+| `htimeline` / `point` | `<HTimeline>` / `<Point year color>` |
+| `bar` / `segment` | `<Bar width label sublabel>` / `<Segment color width title>` |
+| `columns` / `column` | `<Columns>` / `<Column width>` |
+| `image` | `<ApImage src alt width maxwidth zoom />` |
+| `split` | `<Split src side width height position>` |
+| `callout` · `caption` | `<Callout color>` · `<Caption>` |
+| `audio` · `youtube` | `<ApAudio src caption />` · `<ApYoutube id title width />` |
+| `fragment="1"` | `v-click="2"` (op elke component) of een `<v-click>`-blok |
+| `math` | `$$ … $$` en `$ … $` (KaTeX) |
+| `note` | `:::notes` … `:::` |
+
+Kleuren: `red`, `gray`, `orange`, `magenta`, `teal`, `green`.
+
+Eén regel om te onthouden: **Markdown in een component krijgt een lege regel
+ervoor en erna**, anders verwerkt Slidev het niet als Markdown. Korte platte
+tekst mag op één regel.
+
+```md
+<Cards>
+<Card color="teal" icon="🔌" title="Clients verbinden">
+
+elke client maakt **zelf** een verbinding met de broker
+
+</Card>
+<Card color="orange" icon="📨" title="Meteen doorsturen">geen wachtrij</Card>
+</Cards>
+```
+
+Afbeeldingen staan naast het deck (`images/foto.jpg`). In Markdown
+(`![](images/foto.jpg)`) of in een component (`<ApImage src="images/foto.jpg" />`)
+werkt hetzelfde pad, ook op GitHub Pages.
+
+## Notes
 
 ```md
 :::notes
-Deze tekst verschijnt niet op de slide zelf, maar wel in `notes.html` als cursusmateriaal bij deze slide.
-
-Je kunt hier gewone Markdown gebruiken: lijsten, links, codeblokken, afbeeldingen, enzovoort.
+- kort geheugensteuntje voor de lector
 :::
 ```
 
-Bestaande reveal-hugo notes blijven ook werken:
+(`{{% note %}}` uit de Hugo-decks werkt ook.) Notes vóór de eerste slide horen
+bij het automatische titelblad. Wat ermee gebeurt, kies je met `notesMode`:
 
-```md
-{{% note %}}
-Dit wordt automatisch opgenomen in notes.html.
-{{% /note %}}
-```
+- `presenter`: enkel in de sprekersweergave (toets **S**), zoals de speaker
+  notes in reveal.js. Niet op de slide, niet in de PDF.
+- `external` (standaard): een aparte pagina `notes.html` per deck, gelinkt
+  vanop het titelblad en de vakpagina — voor notes die cursustekst zijn.
+- `inline`: als kader op de slide én in `notes.html`.
 
-Instellen per les kan in de Markdown-frontmatter:
+Let op: wat in de notes staat, staat in een publieke repo en in de gebouwde
+site (ook in `presenter`-modus). Geen wachtwoorden of oplossingen die
+studenten niet mogen zien.
 
-```yaml
-notesMode: external   # standaard: alleen in notes.html
-# notesMode: presenter # als Slidev speaker notes bewaren én notes.html maken
-# notesMode: inline    # note-kaarten op de slide tonen én notes.html maken
-```
+## Presenteren
 
-Of tijdelijk via de CLI:
+| Toets | |
+|---|---|
+| → / spatie, ← | volgende / vorige klik |
+| **S** | sprekersweergave in een nieuw venster (notes, volgende slide, timer) |
+| **B** | scherm op zwart (Esc of B om terug te keren) |
+| **F** | volledig scherm |
+| **O** · **G** | overzicht van alle slides · ga naar slide |
 
-```bash
-npm run build:course -- --course examples/course-repo --out dist/netwerken --base / --notes-mode presenter
-```
+De PDF staat op `<deck>/slides.pdf`, gelinkt vanop het titelblad; daarin
+staan alle klikken meteen zichtbaar. Een slide is ook rechtstreeks te
+openen als `<deck>/5/` (handig voor links in Digitap).
 
-## PDF en notes links
-
-Het automatisch gegenereerde AP-titelblad toont links naar:
-
-- `./slides.pdf`
-- `./notes.html`
-
-Het build-script genereert beide bestanden per hoofdstuk.
-
-## Afbeeldingen
-
-Aanbevolen voor gedeelde assets per hoofdstuk:
-
-```text
-public/h02-fysieke-laag/images/glasvezel.png
-```
-
-Gebruik in Markdown:
-
-```md
-![Glasvezel](/h02-fysieke-laag/images/glasvezel.png)
-```
-
-Relatieve afbeeldingen naast een slidebestand werken meestal ook, omdat de build-engine de slide-map naar een tijdelijke Slidev-workdir kopieert.
-
-## Migratie vanaf reveal-hugo
-
-Een eerste automatische conversie:
+## Migratie vanaf de Hugo-site (reveal-hugo)
 
 ```bash
-npm run migrate:hugo -- \
-  --input ../oude-cursus/site/content/netwerken-h2/_index.md \
-  --output ../cursus-netwerken/slides/h02-fysieke-laag.md
+# één deck
+npm run migrate:hugo -- --input ../cursus/site/content/wirelesstech/propagatie/_index.md \
+  --output ../cursus-wireless/slides/propagatie/index.md
+# een heel vak: elke submap met een reveal-deck wordt slides/<submap>/index.md
+npm run migrate:hugo -- --input ../cursus/site/content/iot-datalab-new --output ../iot-datalab/slides
 ```
 
-Daarna manueel nakijken:
+Het script zet de TOML-front matter om (`title`, `weight` → `order`,
+`ai_label` → `aiLabel`), maakt van de eerste titelslide het automatische
+titelblad (`# Vak` / `## Les`), van `{{< slide class="title" >}}` een
+`layout: section`, verhoogt de koppen (`##` → `#`) en zet elke shortcode om
+naar de component hierboven, ook in codevoorbeelden. Afbeeldingen, audio, …
+naast het deck gaan mee. Wat niet automatisch kan (`{{< section >}}`,
+onbekende shortcodes, extra slide-attributen) verschijnt als waarschuwing met
+het slidenummer.
 
-- front matter bovenaan de Markdown
-- cover/section layouts
-- fragments/click-animaties
-- afbeeldingspaden
-- heel lange notes, die beter over meerdere slides verdeeld worden
+Nakijken na een migratie: bouwen, en de slides overlopen die de build als te
+vol meldt.
 
 ## GitHub Pages per vak
 
-In de vakrepo zet je `.github/workflows/deploy.yml`:
+`.github/workflows/deploy.yml` in de vakrepo:
 
 ```yaml
 name: Publish slides
@@ -267,70 +258,50 @@ permissions:
 jobs:
   publish:
     uses: warddr/slidev-ap-engine/.github/workflows/build-slidev-course.yml@main
-    with:
-      engine-repository: warddr/slidev-ap-engine
-      engine-ref: main
 ```
 
-In GitHub Pages kies je **Build and deployment -> GitHub Actions**.
+Daarna in de vakrepo: **Settings → Pages → Build and deployment → Source:
+GitHub Actions**. De site komt op `https://<gebruiker>.github.io/<repo>/`.
+GitHub Pages is gratis voor publieke repo's; voor een privérepo is een betaald
+plan nodig.
+
+De engine-repo moet daarvoor publiek zijn (of de vakrepo moet toegang hebben
+tot een privé-workflow).
 
 ## Output
 
-Voor elk deck wordt dit gegenereerd:
-
 ```text
 dist/
-  index.html
-  h01-intro/
-    index.html
+  index.html            # vakpagina
+  les02-mqtt/
+    index.html          # de presentatie
+    1/ 2/ 3/ …          # rechtstreekse links naar een slide
     slides.pdf
-    notes.html
+    notes.html          # enkel bij notesMode external/inline
 ```
 
-## Typografie
+## Afhankelijkheden bijwerken
 
-De AP-theme is ingesteld op **classroom readable**: standaard tekst en lijsten zijn groter dan de Slidev-default. Cursusnotities staan standaard niet op de slide, maar in de aparte notitiepagina.
+Slidev en zijn tientallen afhankelijkheden liggen vast in `package-lock.json`;
+CI gebruikt `npm ci`, dus een build van vandaag geeft volgend jaar hetzelfde
+resultaat. Bijwerken gebeurt bewust:
 
-Wil je voor een specifiek deck toch compacter werken, gebruik dan een CSS-class op de slide:
-
-```md
----
-class: text-sm
----
+```bash
+npm install @slidev/cli@latest @slidev/parser@latest @slidev/types@latest
+npm run build:course -- --course examples/course-repo --out dist/test --base /
 ```
 
+…en de PDF's en een paar decks nakijken vóór je commit.
 
-## v8: automatische AP-titelpagina zonder lege slide
+`package.json` pint `magic-string` op 1.4.2 (`overrides`): versie 1.4.3 (5
+oktober 2026) laat via UnoCSS elke Slidev-build falen met `[lightningcss
+minify] Invalid token in pseudo element` (slidevjs/slidev#2768,
+unocss/unocss#5373). Die regel mag weg zodra dat opgelost is.
 
-Vanaf v8 wordt de automatische AP-titelpagina opgebouwd uit de Markdown-frontmatter van de les, zonder extra slide-frontmatterblok. Daardoor ontstaat er geen lege eerste slide meer.
+## Thema-instellingen
 
-Voorbeeld:
-
-```md
----
-title: "Introductie"
-course: "Netwerken IoT"
-slug: "h01-intro"
-order: 1
-notesMode: external
----
-
-# Eerste inhoudsslide
-```
-
-De AP-titelpagina toont standaard alleen:
-
-- de cursusnaam (`course`) als kleine bovenlijn;
-- de lestitel (`title`) als ondertitel op de AP-master.
-
-De optionele frontmatter `subtitle` wordt niet meer getoond op de automatisch gegenereerde AP-titelpagina. Je kunt die metadata nog wel gebruiken voor andere doeleinden.
-
-
-## Directe links naar slides
-
-De build maakt automatisch fallback-pagina's zoals `h01-intro/2/index.html`. Daardoor werken links vanuit `notes.html` of cursusmateriaal rechtstreeks naar `h01-intro/2/`, ook op statische hosting zoals GitHub Pages. Zonder deze fallback zou Slidev de route pas kennen nadat de SPA via `h01-intro/` geladen is.
-
-
-## v0.5.1 fix
-
-Local chapter assets referenced as `images/foo.png` are normalized to `./images/foo.png` during build. This avoids Vite/Rolldown resolving chapter images as bare imports when Markdown files live in `slides/<chapter>/index.md`.
+- Canvas 1280×720 (16:9), basistekst 36 px (`--ap-font-size` in
+  `theme/styles/index.css`); alle componenten rekenen in `em`.
+- Lettertype Arial (op Linux: Liberation Sans).
+- Mermaid in AP-kleuren (`theme/setup/mermaid.ts`), klassieke look.
+- Compacter voor één slide: `class: text-sm` of `class: compact-table`.

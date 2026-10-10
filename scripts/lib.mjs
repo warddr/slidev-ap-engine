@@ -70,76 +70,37 @@ export function splitFrontmatter(source) {
   }
 }
 
-export function extractTitleFromFrontmatter(frontmatter) {
-  const match = frontmatter.match(/^title:\s*["']?(.+?)["']?\s*$/m)
-  return match?.[1]?.trim()
-}
-
-export function defaultFrontmatter({ title, course, chapter, slug, date }) {
-  const escaped = (v) => String(v || '').replace(/"/g, '\\"')
-  return [
-    'theme: slidev-theme-ap',
-    `title: "${escaped(title || chapter || course || slug)}"`,
-    course ? `course: "${escaped(course)}"` : '',
-    chapter ? `chapter: "${escaped(chapter)}"` : '',
-    date ? `apDate: "${escaped(date)}"` : '',
-    'download: ./slides.pdf',
-    'drawings:',
-    '  persist: false',
-    'defaults:',
-    '  layout: default',
-  ].filter(Boolean).join('\n')
-}
-
-function renderNoteHtml(noteMarkdown) {
-  const html = md.render(noteMarkdown.trim())
-  return `<div class="ap-course-note">\n<div class="ap-course-note__title">Cursusmateriaal</div>\n<div class="ap-course-note__body">\n${html}\n</div>\n</div>`
-}
-
-function renderPresenterNote(noteMarkdown) {
-  const cleaned = noteMarkdown.trim().replace(/-->/g, '→')
-  return `<!--\n${cleaned}\n-->`
-}
-
-function normalizeNotesMode(value) {
-  const mode = String(value || 'external').toLowerCase().trim()
-  if (['external', 'presenter', 'inline'].includes(mode)) return mode
-  throw new Error(`Unknown notes mode "${value}". Use external, presenter, or inline.`)
-}
-
-export function transformNotesAndCollect(body, options = {}) {
-  const notesMode = normalizeNotesMode(options.notesMode)
-  const notes = []
-  let slideIndex = 0
-  const chunks = body.split(/\n(?=---\s*(?:\n|$))/g)
-  const transformedChunks = chunks.map((chunk, index) => {
-    slideIndex = index + 1
-    let local = chunk
-    const noteMarkdowns = []
-
-    const noteReplacement = (_, inner) => {
-      const note = inner.trim()
-      noteMarkdowns.push(note)
-      if (notesMode === 'inline') return renderNoteHtml(note)
-      if (notesMode === 'presenter') return renderPresenterNote(note)
-      return ''
+// Splits Markdown in stukken binnen en buiten ```/~~~-codeblokken.
+export function splitCodeFences(markdown) {
+  const parts = []
+  let current = ''
+  let fence = null
+  for (const line of markdown.split(/(?<=\n)/)) {
+    const marker = line.match(/^\s*(`{3,}|~{3,})/)
+    if (!fence && marker) {
+      parts.push({ code: false, text: current })
+      current = line
+      fence = marker[1]
     }
-
-    local = local.replace(/\{\{%\s*note\s*%\}\}([\s\S]*?)\{\{%\s*\/note\s*%\}\}/g, noteReplacement)
-    local = local.replace(/^:::notes?\s*\n([\s\S]*?)\n:::$/gm, noteReplacement)
-    local = local.replace(/^::: ?course-note\s*\n([\s\S]*?)\n:::$/gm, noteReplacement)
-
-    for (const note of noteMarkdowns) {
-      notes.push({ slide: slideIndex, markdown: note, html: md.render(note) })
+    else if (fence && marker && marker[1][0] === fence[0] && marker[1].length >= fence.length && !line.trim().slice(marker[1].length)) {
+      parts.push({ code: true, text: current + line })
+      current = ''
+      fence = null
     }
-    return local.replace(/\n{3,}/g, '\n\n')
-  })
-
-  return { body: transformedChunks.join('\n'), notes, notesMode }
+    else current += line
+  }
+  parts.push({ code: Boolean(fence), text: current })
+  return parts
 }
-
 
 export function normalizeRelativeAssetPaths(markdown) {
+  // Codevoorbeelden blijven zoals ze geschreven zijn.
+  return splitCodeFences(String(markdown || ''))
+    .map(part => part.code ? part.text : normalizeAssetPathsInText(part.text))
+    .join('')
+}
+
+function normalizeAssetPathsInText(markdown) {
   // Slidev/Vite treats paths like "images/foo.png" inside Markdown/HTML as
   // bare imports in some contexts. Prefix local chapter assets with "./" so
   // they resolve relative to the deck file that the engine copies into the
@@ -209,23 +170,38 @@ main p{margin:.55rem 0 .8rem;}main li+li{margin-top:.25rem;} code{color:var(--ap
   await fs.writeFile(outFile, html, 'utf8')
 }
 
-export async function writeCourseIndex({ outFile, title, decks }) {
-  const cards = decks.map(deck => `<article class="card"><span class="kicker">${escapeHtml(deck.slug)}</span><strong>${escapeHtml(deck.title)}</strong><div class="links"><a href="./${deck.slug}/">Slides</a><a href="./${deck.slug}/notes.html">Cursusmateriaal</a><a href="./${deck.slug}/slides.pdf">PDF</a></div></article>`).join('\n')
+export async function writeCourseIndex({ outFile, title, description, author, date, decks }) {
+  const cards = decks.map(deck => {
+    const links = [
+      `<a href="./${deck.slug}/">Slides</a>`,
+      deck.hasNotesPage ? `<a href="./${deck.slug}/notes.html">Cursusmateriaal</a>` : '',
+      deck.hasPdf ? `<a href="./${deck.slug}/slides.pdf">PDF</a>` : '',
+    ].filter(Boolean).join('')
+    return `<article class="card"><a class="title" href="./${deck.slug}/">${escapeHtml(deck.title)}</a><div class="links">${links}</div></article>`
+  }).join('\n')
+  const meta = [author, date].filter(Boolean).map(escapeHtml).join(' · ')
   const html = `<!doctype html>
 <html lang="nl">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${escapeHtml(title)}</title>
+<link rel="icon" href="./ap-theme/ap-logo-color.png" />
 <style>
 :root{--ap-red:#ad0f0a;--ap-dark:#404040;--ap-light:#e7e6e6;}
+*{box-sizing:border-box;}
 body{font-family:Arial,Helvetica,sans-serif;margin:0;color:var(--ap-dark);background:#fff;}
 header{background:var(--ap-red);color:white;padding:3rem 4rem;background-image:linear-gradient(rgba(173,15,10,.45),rgba(173,15,10,.45)),url('./ap-theme/ap-background.jpg');background-size:cover;background-position:center;}
-h1{font-size:2.6rem;margin:0;line-height:1.05}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem;max-width:1080px;margin:2rem auto;padding:0 1rem}.card{display:flex;flex-direction:column;gap:.65rem;border:1px solid #e1e1e1;text-decoration:none;color:var(--ap-dark);padding:1.2rem;border-left:8px solid var(--ap-red);box-shadow:0 1px 2px rgba(0,0,0,.06)}.card:hover{background:#f8f8f8}.card strong{font-size:1.25rem}.kicker{font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.06em}.links{display:flex;gap:.55rem;flex-wrap:wrap}.links a{color:var(--ap-red);font-weight:700;text-decoration:none;border-bottom:1px solid rgba(173,15,10,.28)}.links a:hover{border-bottom-color:currentColor}
+h1{font-size:2.6rem;margin:0;line-height:1.05}header p{margin:.6rem 0 0;opacity:.94;font-size:1.05rem;max-width:760px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem;max-width:1080px;margin:2rem auto;padding:0 1rem}
+.card{display:flex;flex-direction:column;justify-content:space-between;gap:.8rem;border:1px solid #e1e1e1;padding:1.2rem;border-left:8px solid var(--ap-red);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.card:hover{background:#f8f8f8}.title{font-size:1.2rem;font-weight:700;color:var(--ap-dark);text-decoration:none}.title:hover{color:var(--ap-red)}
+.links{display:flex;gap:.55rem;flex-wrap:wrap}.links a{color:var(--ap-red);font-weight:700;text-decoration:none;border-bottom:1px solid rgba(173,15,10,.28)}.links a:hover{border-bottom-color:currentColor}
+@media (max-width:640px){header{padding:2rem 1rem}h1{font-size:2rem}}
 </style>
 </head>
 <body>
-<header><h1>${escapeHtml(title)}</h1></header>
+<header><h1>${escapeHtml(title)}</h1>${description ? `<p>${escapeHtml(description)}</p>` : ''}${meta ? `<p>${meta}</p>` : ''}</header>
 <main class="grid">${cards}</main>
 </body>
 </html>`

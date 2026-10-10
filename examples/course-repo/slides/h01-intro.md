@@ -1,8 +1,5 @@
 ---
 title: "Introductie"
-course: "Netwerken IoT"
-author: "Ward De Ridder"
-apDate: "2026"
 slug: "h01-intro"
 order: 1
 notesMode: external
